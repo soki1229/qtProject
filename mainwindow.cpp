@@ -36,6 +36,12 @@ void MainWindow::initSignalSlots()
     connect(ui->erase, &QPushButton::clicked, this, &MainWindow::onErasePressed);
     connect(ui->eraseAll, &QPushButton::clicked, this, &MainWindow::onEraseAllPressed);
     connect(ui->pnStatus, &QPushButton::clicked, this, &MainWindow::onPNStatusPressed);
+    connect(ui->bracket, &QPushButton::clicked, this, &MainWindow::onBracketPressed);
+
+    connect(ui->sAddition, &QPushButton::clicked, this, &MainWindow::onAdditionPressed);
+    connect(ui->sSubstraction, &QPushButton::clicked, this, &MainWindow::onSubstractionPressed);
+    connect(ui->sMultipulation, &QPushButton::clicked, this, &MainWindow::onMultipulationPressed);
+    connect(ui->sDivision, &QPushButton::clicked, this, &MainWindow::onDivisionPressed);
 }
 
 void MainWindow::initialize()
@@ -63,35 +69,36 @@ void MainWindow::print()
     ui->textBrowser->setText(output);
 }
 
-void MainWindow::onNumberInput(QString num)
+void MainWindow::onNumberInput(QString numString)
 {
-    if (printable.back()->str_ == "0")
+    if (printable.empty() || printable.back()->type_ == Type::Operator)
     {
-        if (num == "0")
-            return;
-
-        printable.back()->str_.removeLast();
+        printable.push_back(std::make_unique<Element>());
     }
 
-    printable.back()->str_.append(num);
+    if (printable.back()->str_ == "0")
+    {
+        printable.back()->str_.clear();
+    }
+
+    printable.back()->str_.append(numString);
 
     print();
 }
 
 void MainWindow::onErasePressed()
 {
-    while (printable.back()->type_ == Type::Operator)
+    if (printable.empty() || printable.back()->type_ == Type::Operator)
     {
-        printable.back().release();
-        printable.pop_back();
+        return;
     }
 
     printable.back()->str_.removeLast();
 
     if (printable.back()->str_.isEmpty())
     {
-        printable.back()->str_ = "0";
-        printable.back()->isNegative_ = false;
+        printable.back().release();
+        printable.pop_back();
     }
 
     print();
@@ -106,15 +113,31 @@ void MainWindow::onEraseAllPressed()
 
 void MainWindow::onPNStatusPressed()
 {
-    if (printable.back()->type_ == Type::Operator)
+    if (printable.empty() || printable.back()->type_ == Type::Operator)
     {
         printable.push_back(std::make_unique<Element>());
-        printable.back()->isNegative_ = true;
     }
-    else/* if (printable.back()->str_ != "0")*/
+
+    printable.back()->isNegative_ = !printable.back()->isNegative_;
+
+    print();
+}
+
+void MainWindow::onBracketPressed()
+{
+
+}
+
+void MainWindow::onOperatorPressed(QString opString)
+{
+    if (printable.back()->type_ == Type::Numeric)
     {
-        printable.back()->isNegative_ = !printable.back()->isNegative_;
+        printable.push_back(std::make_unique<Element>());
+
+        printable.back()->type_ = Type::Operator;
     }
+
+    printable.back()->str_ = opString;
 
     print();
 }
