@@ -12,6 +12,7 @@ QT_END_NAMESPACE
 enum Type
 {
     Numeric,
+    Bracket,
     Operator
 };
 
@@ -56,16 +57,16 @@ private slots:
     void onPNStatusPressed();
     void onBracketPressed();
 
-    void onAdditionPressed()        {onOperatorPressed(" + ");}
-    void onSubstractionPressed()    {onOperatorPressed(" - ");}
-    void onMultipulationPressed()   {onOperatorPressed(" * ");}
-    void onDivisionPressed()        {onOperatorPressed(" / ");}
+    void onAdditionPressed()        {onOperatorPressed("+");}
+    void onSubstractionPressed()    {onOperatorPressed("-");}
+    void onMultipulationPressed()   {onOperatorPressed("*");}
+    void onDivisionPressed()        {onOperatorPressed("/");}
 
 private:
     Ui::MainWindow *ui;
 
     std::vector<std::unique_ptr<Element>> printable;
     // std::vector<std::pair<Element, QString>> printable = {{Element::Numeric, "0"}};
-    bool isNegative = false;
+    bool isBracketOpened = false;
 };
 #endif // MAINWINDOW_H

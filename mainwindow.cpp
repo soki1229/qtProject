@@ -51,6 +51,7 @@ void MainWindow::initialize()
         iter.release();
     }
     printable.clear();
+    isBracketOpened = false;
 
     printable.push_back(std::make_unique<Element>());
 }
@@ -71,7 +72,7 @@ void MainWindow::print()
 
 void MainWindow::onNumberInput(QString numString)
 {
-    if (printable.empty() || printable.back()->type_ == Type::Operator)
+    if (printable.empty() || printable.back()->type_ != Type::Numeric)
     {
         printable.push_back(std::make_unique<Element>());
     }
@@ -88,7 +89,7 @@ void MainWindow::onNumberInput(QString numString)
 
 void MainWindow::onErasePressed()
 {
-    if (printable.empty() || printable.back()->type_ == Type::Operator)
+    if (printable.empty() || printable.back()->type_ != Type::Numeric)
     {
         return;
     }
@@ -125,13 +126,37 @@ void MainWindow::onPNStatusPressed()
 
 void MainWindow::onBracketPressed()
 {
+    if (!printable.empty() && printable.back()->type_ == Type::Bracket && isBracketOpened)
+    {
+        printable.pop_back();
+    }
+    else
+    {
+        printable.push_back(std::make_unique<Element>());
+        printable.back()->type_ = Type::Bracket;
 
+        printable.back()->str_ = !isBracketOpened? "(" : ")";
+    }
+
+
+    isBracketOpened = !isBracketOpened;
+    print();
 }
 
 void MainWindow::onOperatorPressed(QString opString)
 {
-    if (printable.back()->type_ == Type::Numeric)
+    if (!printable.empty() && printable.back()->type_ == Type::Bracket && isBracketOpened)
     {
+        return;
+    }
+
+    if (printable.back()->type_ != Type::Operator)
+    {
+        if (printable.back()->str_.isEmpty())
+        {
+            return;
+        }
+
         printable.push_back(std::make_unique<Element>());
 
         printable.back()->type_ = Type::Operator;
