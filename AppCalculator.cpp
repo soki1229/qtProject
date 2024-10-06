@@ -1,9 +1,9 @@
-#include "mainwindow.h"
-#include "ui_mainwindow.h"
+#include "AppCalculator.h"
+#include "ui_AppCalculator.h"
 
-MainWindow::MainWindow(QWidget *parent)
+AppCalculator::AppCalculator(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+    , ui(new Ui::AppCalculator)
 {
     ui->setupUi(this);
 
@@ -15,36 +15,36 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 
-MainWindow::~MainWindow()
+AppCalculator::~AppCalculator()
 {
     delete ui;
 }
 
-void MainWindow::initSignalSlots()
+void AppCalculator::initSignalSlots()
 {
-    connect(ui->n0, &QPushButton::clicked, this, &MainWindow::onN0Pressed);
-    connect(ui->n1, &QPushButton::clicked, this, &MainWindow::onN1Pressed);
-    connect(ui->n2, &QPushButton::clicked, this, &MainWindow::onN2Pressed);
-    connect(ui->n3, &QPushButton::clicked, this, &MainWindow::onN3Pressed);
-    connect(ui->n4, &QPushButton::clicked, this, &MainWindow::onN4Pressed);
-    connect(ui->n5, &QPushButton::clicked, this, &MainWindow::onN5Pressed);
-    connect(ui->n6, &QPushButton::clicked, this, &MainWindow::onN6Pressed);
-    connect(ui->n7, &QPushButton::clicked, this, &MainWindow::onN7Pressed);
-    connect(ui->n8, &QPushButton::clicked, this, &MainWindow::onN8Pressed);
-    connect(ui->n9, &QPushButton::clicked, this, &MainWindow::onN9Pressed);
+    connect(ui->n0, &QPushButton::clicked, this, &AppCalculator::onN0Pressed);
+    connect(ui->n1, &QPushButton::clicked, this, &AppCalculator::onN1Pressed);
+    connect(ui->n2, &QPushButton::clicked, this, &AppCalculator::onN2Pressed);
+    connect(ui->n3, &QPushButton::clicked, this, &AppCalculator::onN3Pressed);
+    connect(ui->n4, &QPushButton::clicked, this, &AppCalculator::onN4Pressed);
+    connect(ui->n5, &QPushButton::clicked, this, &AppCalculator::onN5Pressed);
+    connect(ui->n6, &QPushButton::clicked, this, &AppCalculator::onN6Pressed);
+    connect(ui->n7, &QPushButton::clicked, this, &AppCalculator::onN7Pressed);
+    connect(ui->n8, &QPushButton::clicked, this, &AppCalculator::onN8Pressed);
+    connect(ui->n9, &QPushButton::clicked, this, &AppCalculator::onN9Pressed);
 
-    connect(ui->erase, &QPushButton::clicked, this, &MainWindow::onErasePressed);
-    connect(ui->eraseAll, &QPushButton::clicked, this, &MainWindow::onEraseAllPressed);
-    connect(ui->pnStatus, &QPushButton::clicked, this, &MainWindow::onPNStatusPressed);
-    connect(ui->bracket, &QPushButton::clicked, this, &MainWindow::onBracketPressed);
+    connect(ui->erase, &QPushButton::clicked, this, &AppCalculator::onErasePressed);
+    connect(ui->eraseAll, &QPushButton::clicked, this, &AppCalculator::onEraseAllPressed);
+    connect(ui->pnStatus, &QPushButton::clicked, this, &AppCalculator::onPNStatusPressed);
+    connect(ui->bracket, &QPushButton::clicked, this, &AppCalculator::onBracketPressed);
 
-    connect(ui->sAddition, &QPushButton::clicked, this, &MainWindow::onAdditionPressed);
-    connect(ui->sSubstraction, &QPushButton::clicked, this, &MainWindow::onSubstractionPressed);
-    connect(ui->sMultipulation, &QPushButton::clicked, this, &MainWindow::onMultipulationPressed);
-    connect(ui->sDivision, &QPushButton::clicked, this, &MainWindow::onDivisionPressed);
+    connect(ui->sAddition, &QPushButton::clicked, this, &AppCalculator::onAdditionPressed);
+    connect(ui->sSubstraction, &QPushButton::clicked, this, &AppCalculator::onSubstractionPressed);
+    connect(ui->sMultipulation, &QPushButton::clicked, this, &AppCalculator::onMultipulationPressed);
+    connect(ui->sDivision, &QPushButton::clicked, this, &AppCalculator::onDivisionPressed);
 }
 
-void MainWindow::initialize()
+void AppCalculator::initialize()
 {
     for (auto &iter : printable)
     {
@@ -56,7 +56,7 @@ void MainWindow::initialize()
     printable.push_back(std::make_unique<Element>());
 }
 
-void MainWindow::print()
+void AppCalculator::print()
 {
     QString output;
     for (auto &iter : printable)
@@ -70,7 +70,7 @@ void MainWindow::print()
     ui->textBrowser->setText(output);
 }
 
-void MainWindow::onNumberInput(QString numString)
+void AppCalculator::onNumberInput(QString numString)
 {
     if (printable.empty() || printable.back()->type_ != Type::Numeric)
     {
@@ -87,7 +87,7 @@ void MainWindow::onNumberInput(QString numString)
     print();
 }
 
-void MainWindow::onErasePressed()
+void AppCalculator::onErasePressed()
 {
     if (printable.empty() || printable.back()->type_ != Type::Numeric)
     {
@@ -105,14 +105,14 @@ void MainWindow::onErasePressed()
     print();
 }
 
-void MainWindow::onEraseAllPressed()
+void AppCalculator::onEraseAllPressed()
 {
     initialize();
 
     print();
 }
 
-void MainWindow::onPNStatusPressed()
+void AppCalculator::onPNStatusPressed()
 {
     if (printable.empty() || printable.back()->type_ == Type::Operator)
     {
@@ -124,7 +124,7 @@ void MainWindow::onPNStatusPressed()
     print();
 }
 
-void MainWindow::onBracketPressed()
+void AppCalculator::onBracketPressed()
 {
     if (!printable.empty() && printable.back()->type_ == Type::Bracket && isBracketOpened)
     {
@@ -143,7 +143,7 @@ void MainWindow::onBracketPressed()
     print();
 }
 
-void MainWindow::onOperatorPressed(QString opString)
+void AppCalculator::onOperatorPressed(QString opString)
 {
     if (!printable.empty() && printable.back()->type_ == Type::Bracket && isBracketOpened)
     {
