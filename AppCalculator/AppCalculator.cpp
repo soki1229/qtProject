@@ -1,5 +1,6 @@
 #include "AppCalculator.h"
 #include "ui_AppCalculator.h"
+#include <iostream>
 
 AppCalculator::AppCalculator(QWidget *parent)
     : QMainWindow(parent)
@@ -42,27 +43,44 @@ void AppCalculator::initSignalSlots()
     connect(ui->sSubstraction, &QPushButton::clicked, this, &AppCalculator::onSubstractionPressed);
     connect(ui->sMultipulation, &QPushButton::clicked, this, &AppCalculator::onMultipulationPressed);
     connect(ui->sDivision, &QPushButton::clicked, this, &AppCalculator::onDivisionPressed);
+
+    connect(ui->returns, &QPushButton::clicked, this, &AppCalculator::onReturnsPressed);
 }
 
-void AppCalculator::initialize()
+void AppCalculator::initialize(bool continuous)
 {
-    for (auto &iter : printable)
+    if (!continuous)
     {
-        iter.release();
-    }
-    printable.clear();
-    isBracketOpened = false;
+        for (auto &iter : printable)
+        {
+            iter.release();
+        }
 
-    printable.push_back(std::make_unique<Element>());
+        printable.clear();
+
+        printable.push_back(std::make_unique<Element>());
+    }
+
+    isBracketOpened = false;
+    openedIndex = 0;
+    formula.clear();
 }
 
 void AppCalculator::print()
 {
     QString output;
+
+    if (!formula.isEmpty())
+    {
+        output.push_back(formula + '\n');
+    }
+
     for (auto &iter : printable)
     {
-        if (iter->type_ == Type::Numeric && iter->isNegative_)
+        if (iter->isNegative_)
+        {
             output.push_back("-");
+        }
 
         output.push_back(iter->str_);
     }
@@ -70,8 +88,33 @@ void AppCalculator::print()
     ui->textBrowser->setText(output);
 }
 
+bool AppCalculator::isOperatorAvailable()
+{
+    if (printable.empty())
+    {
+        return false;
+    }
+
+    if (printable.back()->type_ == Type::Numeric && printable.back()->str_.isEmpty())
+    {
+        return false;
+    }
+
+    if (printable.back()->type_ == Type::Bracket && isBracketOpened)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void AppCalculator::onNumberInput(QString numString)
 {
+    if (!formula.isEmpty())
+    {
+        initialize();
+    }
+
     if (printable.empty() || printable.back()->type_ != Type::Numeric)
     {
         printable.push_back(std::make_unique<Element>());
@@ -83,6 +126,28 @@ void AppCalculator::onNumberInput(QString numString)
     }
 
     printable.back()->str_.append(numString);
+
+    print();
+}
+
+void AppCalculator::onOperatorPressed(QString opString)
+{
+    if (!isOperatorAvailable())
+    {
+        return;
+    }
+
+    if (!formula.isEmpty())
+    {
+        initialize(true);
+    }
+
+    if (printable.back()->type_ != Type::Operator)
+    {
+        printable.push_back(std::make_unique<Element>(Type::Operator));
+    }
+
+    printable.back()->str_ = opString;
 
     print();
 }
@@ -119,7 +184,14 @@ void AppCalculator::onPNStatusPressed()
         printable.push_back(std::make_unique<Element>());
     }
 
-    printable.back()->isNegative_ = !printable.back()->isNegative_;
+    auto* target = &printable.back();
+
+    if (printable.back()->type_ == Type::Bracket && !isBracketOpened)
+    {
+        target = &(printable[openedIndex]);
+    }
+
+    (*target)->isNegative_ = !(*target)->isNegative_;
 
     print();
 }
@@ -132,37 +204,83 @@ void AppCalculator::onBracketPressed()
     }
     else
     {
-        printable.push_back(std::make_unique<Element>());
-        printable.back()->type_ = Type::Bracket;
+        printable.push_back(std::make_unique<Element>(Type::Bracket));
 
         printable.back()->str_ = !isBracketOpened? "(" : ")";
     }
 
-
     isBracketOpened = !isBracketOpened;
+
+    openedIndex = isBracketOpened? printable.size() - 1 : openedIndex;
+
     print();
 }
 
-void AppCalculator::onOperatorPressed(QString opString)
+void AppCalculator::setFormula()
 {
-    if (!printable.empty() && printable.back()->type_ == Type::Bracket && isBracketOpened)
+    QString output;
+    for (auto &iter : printable)
     {
+        if (iter->type_ == Type::Numeric && iter->isNegative_)
+            output.push_back("-");
+
+        output.push_back(iter->str_);
+    }
+
+    output.push_back(" =");
+
+    formula = output;
+}
+
+void AppCalculator::onReturnsPressed()
+{
+    setFormula();
+
+    if (!calculateFormula())
+    {
+        ui->textBrowser->setText("ERR");
+        initialize();
         return;
     }
 
-    if (printable.back()->type_ != Type::Operator)
-    {
-        if (printable.back()->str_.isEmpty())
-        {
-            return;
-        }
-
-        printable.push_back(std::make_unique<Element>());
-
-        printable.back()->type_ = Type::Operator;
-    }
-
-    printable.back()->str_ = opString;
-
     print();
 }
+
+bool AppCalculator::calculateFormula()
+{
+    for (auto it = printable.begin(); it != printable.end(); it++)
+    {
+        auto& curr = *it;
+        if (curr->type_ == Type::Operator)
+        {
+            auto& prev = *(it-1);
+            auto& next = *(it+1);
+
+            if (curr->str_ == " * ")
+            {
+                prev->str_ = QString::number(prev->str_.toFloat() * next->str_.toFloat());
+
+                printable.erase(it, it+2);
+                it--;
+            }
+            else if (curr->str_ == " / ")
+            {
+                if (next->str_ == "0")
+                {
+                    return false;
+                }
+
+                prev->str_ = QString::number(prev->str_.toFloat() / next->str_.toFloat());
+
+                printable.erase(it, it+2);
+                it--;
+            }
+        }
+    }
+
+    return true;
+}
+
+/*
+ *     12 / 9 * 3 / 2 should be converted into (12 * 3) / (9 * 2)
+*/

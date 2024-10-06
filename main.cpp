@@ -1,4 +1,4 @@
-#include "AppCalculator.h"
+#include "AppCalculator/AppCalculator.h"
 
 #include <QApplication>
 

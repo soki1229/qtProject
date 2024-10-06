@@ -19,6 +19,10 @@ enum Type
 class Element
 {
 public:
+    Element(){};
+    Element(Type type): type_(type){};
+    ~Element(){};
+
     Type    type_;
     QString str_;
     bool    isNegative_;
@@ -37,8 +41,13 @@ public:
 
     void onNumberInput(QString numString);
     void onOperatorPressed(QString opString);
-    void initialize();
+    void setFormula();
+    void initialize(bool continuous = false);
     void print();
+
+    bool isOperatorAvailable();
+
+    bool calculateFormula();
 
 private slots:
     void onN0Pressed()              {onNumberInput("0");}
@@ -57,16 +66,21 @@ private slots:
     void onPNStatusPressed();
     void onBracketPressed();
 
-    void onAdditionPressed()        {onOperatorPressed("+");}
-    void onSubstractionPressed()    {onOperatorPressed("-");}
-    void onMultipulationPressed()   {onOperatorPressed("*");}
-    void onDivisionPressed()        {onOperatorPressed("/");}
+    void onAdditionPressed()        {onOperatorPressed(" + ");}
+    void onSubstractionPressed()    {onOperatorPressed(" - ");}
+    void onMultipulationPressed()   {onOperatorPressed(" * ");}
+    void onDivisionPressed()        {onOperatorPressed(" / ");}
+
+    void onReturnsPressed();
 
 private:
     Ui::AppCalculator *ui;
 
     std::vector<std::unique_ptr<Element>> printable;
+    QString formula;
+
     // std::vector<std::pair<Element, QString>> printable = {{Element::Numeric, "0"}};
     bool isBracketOpened = false;
+    int openedIndex = 0;
 };
 #endif // APPCALCULATOR_H
