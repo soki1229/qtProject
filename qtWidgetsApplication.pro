@@ -10,14 +10,17 @@ CONFIG += sdk_no_version_check
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    AppCalculator/AppCalculator.cpp \
+    app/AppBasicCalculator.cpp \
     main.cpp
+    # AppCalculator/AppCalculator.cpp \
 
 HEADERS += \
-    AppCalculator/AppCalculator.h
+    app/AppBasicCalculator.h
+    # AppCalculator/AppCalculator.h \
 
 FORMS += \
-    AppCalculator/AppCalculator.ui
+    app/AppBasicCalculator.ui
+    # AppCalculator/AppCalculator.ui \
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

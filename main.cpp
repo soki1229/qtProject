@@ -1,11 +1,11 @@
-#include "AppCalculator/AppCalculator.h"
+#include "app/AppBasicCalculator.h"
 
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    AppCalculator w;
+    AppBasicCalculator w;
     w.show();
     return a.exec();
 }
