@@ -20,8 +20,8 @@ public:
         Operator
     };
 
-    Element(){};
-    Element(Type type): type_(type){};
+    Element();
+    Element(Type type);
     Element(float f);
     Element(char c);
     ~Element(){};
@@ -43,28 +43,29 @@ public:
 
     void initSignalSlots();
 
-    void onNumberInput(QChar numChar);
+    void onNumericInput(QChar numChar);
     void onOperatorPressed(QChar opChar);
     void setArchive();
     void initialize(bool continuous = false);
     void print();
 
+    bool wasLastType(Element::Type type);
     bool isOperatorAvailable();
     bool calcualteFromula(FormulaElements::iterator begin, FormulaElements::iterator end);
 
 signals:
 
 private slots:
-    void onN0Pressed()              {onNumberInput('0');}
-    void onN1Pressed()              {onNumberInput('1');}
-    void onN2Pressed()              {onNumberInput('2');}
-    void onN3Pressed()              {onNumberInput('3');}
-    void onN4Pressed()              {onNumberInput('4');}
-    void onN5Pressed()              {onNumberInput('5');}
-    void onN6Pressed()              {onNumberInput('6');}
-    void onN7Pressed()              {onNumberInput('7');}
-    void onN8Pressed()              {onNumberInput('8');}
-    void onN9Pressed()              {onNumberInput('9');}
+    void onN0Pressed()              {onNumericInput('0');}
+    void onN1Pressed()              {onNumericInput('1');}
+    void onN2Pressed()              {onNumericInput('2');}
+    void onN3Pressed()              {onNumericInput('3');}
+    void onN4Pressed()              {onNumericInput('4');}
+    void onN5Pressed()              {onNumericInput('5');}
+    void onN6Pressed()              {onNumericInput('6');}
+    void onN7Pressed()              {onNumericInput('7');}
+    void onN8Pressed()              {onNumericInput('8');}
+    void onN9Pressed()              {onNumericInput('9');}
 
     void onErasePressed();
     void onEraseAllPressed();

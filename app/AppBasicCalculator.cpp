@@ -1,7 +1,17 @@
 #include "AppBasicCalculator.h"
 #include "ui_AppBasicCalculator.h"
 
-Element::Element(char c)
+Element::Element()
+    : type_(Type::Numeric), str_(QString()), num_(0), isNegative_(false)
+{
+}
+
+Element::Element(Type type) : Element()
+{
+    type_ = type;
+}
+
+Element::Element(char c) : Element()
 {
     switch (c)
     {
@@ -43,7 +53,6 @@ AppBasicCalculator::~AppBasicCalculator()
     delete ui;
 }
 
-
 void AppBasicCalculator::initSignalSlots()
 {
     connect(ui->num0, &QPushButton::clicked, this, &AppBasicCalculator::onN0Pressed);
@@ -79,8 +88,6 @@ void AppBasicCalculator::initialize(bool continuous)
         }
 
         formula.clear();
-
-        formula.push_back(std::make_unique<Element>());
     }
 
     isBracketOpened = false;
@@ -110,6 +117,11 @@ void AppBasicCalculator::print()
     ui->display->setText(output);
 }
 
+bool AppBasicCalculator::wasLastType(Element::Type type)
+{
+    return (!formula.empty() && formula.back()->type_ == type);
+}
+
 bool AppBasicCalculator::isOperatorAvailable()
 {
     if (formula.empty())
@@ -117,12 +129,7 @@ bool AppBasicCalculator::isOperatorAvailable()
         return false;
     }
 
-    if (formula.back()->type_ == Element::Type::Numeric && formula.back()->str_.isEmpty())
-    {
-        return false;
-    }
-
-    if (formula.back()->type_ == Element::Type::Bracket && isBracketOpened)
+    if (wasLastType(Element::Type::Bracket) && isBracketOpened)
     {
         return false;
     }
@@ -130,14 +137,19 @@ bool AppBasicCalculator::isOperatorAvailable()
     return true;
 }
 
-void AppBasicCalculator::onNumberInput(QChar numChar)
+void AppBasicCalculator::onNumericInput(QChar numChar)
 {
+    if (wasLastType(Element::Type::Bracket) && !isBracketOpened)
+    {
+        return;
+    }
+
     if (!history.isEmpty() && formula.size() == 1)
     {
         initialize();
     }
 
-    if (formula.empty() || formula.back()->type_ != Element::Type::Numeric)
+    if (!wasLastType(Element::Type::Numeric))
     {
         formula.push_back(std::make_unique<Element>());
     }
@@ -166,7 +178,7 @@ void AppBasicCalculator::onOperatorPressed(QChar opChar)
         initialize(true);
     }
 
-    if (formula.back()->type_ != Element::Type::Operator)
+    if (!wasLastType(Element::Type::Operator))
     {
         formula.push_back(std::make_unique<Element>(Element::Type::Operator));
     }
@@ -178,7 +190,7 @@ void AppBasicCalculator::onOperatorPressed(QChar opChar)
 
 void AppBasicCalculator::onErasePressed()
 {
-    if (formula.empty() || formula.back()->type_ != Element::Type::Numeric)
+    if (!wasLastType(Element::Type::Numeric))
     {
         return;
     }
@@ -210,7 +222,7 @@ void AppBasicCalculator::onPNStatusPressed()
 
     auto* target = &formula.back();
 
-    if (formula.back()->type_ == Element::Type::Bracket && !isBracketOpened)
+    if (wasLastType(Element::Type::Bracket) && !isBracketOpened)
     {
         target = &(formula[openedIndex]);
     }
@@ -227,27 +239,31 @@ void AppBasicCalculator::onPNStatusPressed()
 
 void AppBasicCalculator::onBracketPressed()
 {
-    if (isBracketOpened)
+    if (!isBracketOpened)
     {
-        if (formula.back()->type_ == Element::Type::Operator)
+        if (!formula.empty() && formula.back()->type_ != Element::Type::Operator)
+        {
+            return;
+        }
+    }
+    else
+    {
+        if (wasLastType(Element::Type::Operator))
         {
             return;
         }
 
-        if (formula.back()->type_ == Element::Type::Bracket)
+        if (wasLastType(Element::Type::Bracket))
         {
             formula.pop_back();
+            isBracketOpened = false;
+            print();
+
+            return;
         }
     }
 
-    if (formula.back()->type_ == Element::Type::Numeric && formula.back()->str_.isEmpty())
-    {
-        formula.back()->type_ = Element::Type::Bracket;
-    }
-    else
-    {
-        formula.push_back(std::make_unique<Element>(Element::Type::Bracket));
-    }
+    formula.push_back(std::make_unique<Element>(Element::Type::Bracket));
 
     formula.back()->str_ = !isBracketOpened? '(' : ')';
 
@@ -278,6 +294,10 @@ void AppBasicCalculator::setArchive()
 
 void AppBasicCalculator::onReturnsPressed()
 {
+    if (formula.empty() || isBracketOpened || wasLastType(Element::Type::Operator))
+    {
+        return;
+    }
 
     setArchive();
 
@@ -294,11 +314,6 @@ void AppBasicCalculator::onReturnsPressed()
 
 bool AppBasicCalculator::calcualteFromula(FormulaElements::iterator sPos, FormulaElements::iterator ePos)
 {
-    if (formula.size() == 1)
-    {
-        return true;
-    }
-
     // 1. Bracket
     auto it = std::find_if(sPos, ePos, [](auto& p){return p->type_ == Element::Type::Bracket;});
     if (it != ePos)
@@ -369,5 +384,5 @@ bool AppBasicCalculator::calcualteFromula(FormulaElements::iterator sPos, Formul
         return calcualteFromula(formula.begin(), formula.end());
     }
 
-    return false;
+    return (formula.size() == 1);
 }
