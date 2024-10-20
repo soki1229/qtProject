@@ -26,6 +26,11 @@ public:
     Element(char c);
     ~Element(){};
 
+    bool isRealNumber()
+    {
+        return type_ == Element::Type::Numeric && str_.contains('.');
+    }
+
     Type    type_;
     QString str_;
     float   num_;
@@ -66,6 +71,7 @@ private slots:
     void onN7Pressed()              {onNumericInput('7');}
     void onN8Pressed()              {onNumericInput('8');}
     void onN9Pressed()              {onNumericInput('9');}
+    void onDecimalPointPressed();
 
     void onErasePressed();
     void onEraseAllPressed();
@@ -83,10 +89,12 @@ private:
     Ui::AppBasicCalculator *ui;
 
     FormulaElements formula;
-    QString history;
+    QString         history;
 
-    bool isBracketOpened = false;
-    int openedIndex = 0;
+    bool    isBracketOpened = false;
+    int     openedIndex     = 0;
+
+    bool    resetRequired   = false;
 
 };
 

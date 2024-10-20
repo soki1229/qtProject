@@ -2,7 +2,7 @@
 #include "ui_AppBasicCalculator.h"
 
 Element::Element()
-    : type_(Type::Numeric), str_(QString()), num_(0), isNegative_(false)
+    : type_(Type::Numeric), str_(QString("0")), num_(0), isNegative_(false)
 {
 }
 
@@ -65,6 +65,7 @@ void AppBasicCalculator::initSignalSlots()
     connect(ui->num7, &QPushButton::clicked, this, &AppBasicCalculator::onN7Pressed);
     connect(ui->num8, &QPushButton::clicked, this, &AppBasicCalculator::onN8Pressed);
     connect(ui->num9, &QPushButton::clicked, this, &AppBasicCalculator::onN9Pressed);
+    connect(ui->numDecimalPoint, &QPushButton::clicked, this, &AppBasicCalculator::onDecimalPointPressed);
     connect(ui->numPrinciple, &QPushButton::clicked, this, &AppBasicCalculator::onPNStatusPressed);
 
     connect(ui->exDelete, &QPushButton::clicked, this, &AppBasicCalculator::onErasePressed);
@@ -92,6 +93,7 @@ void AppBasicCalculator::initialize(bool continuous)
 
     isBracketOpened = false;
     openedIndex = 0;
+    resetRequired = false;
     history.clear();
 }
 
@@ -144,7 +146,7 @@ void AppBasicCalculator::onNumericInput(QChar numChar)
         return;
     }
 
-    if (!history.isEmpty() && formula.size() == 1)
+    if (resetRequired && formula.size() == 1)
     {
         initialize();
     }
@@ -166,6 +168,37 @@ void AppBasicCalculator::onNumericInput(QChar numChar)
     print();
 }
 
+void AppBasicCalculator::onDecimalPointPressed()
+{
+    if (wasLastType(Element::Type::Bracket))
+    {
+        return;
+    }
+
+    if (wasLastType(Element::Type::Numeric))
+    {
+        if (formula.back()->isRealNumber())
+        {
+            return;
+        }
+    }
+    else
+    {
+        formula.push_back(std::make_unique<Element>());
+    }
+
+    if (resetRequired)
+    {
+        initialize(true);
+    }
+
+    formula.back()->str_.append(".");
+
+    formula.back()->num_ = (formula.back()->str_).toFloat() * (formula.back()->isNegative_? -1 : 1);
+
+    print();
+}
+
 void AppBasicCalculator::onOperatorPressed(QChar opChar)
 {
     if (!isOperatorAvailable())
@@ -173,9 +206,14 @@ void AppBasicCalculator::onOperatorPressed(QChar opChar)
         return;
     }
 
-    if (!history.isEmpty())
+    if (resetRequired)
     {
         initialize(true);
+    }
+
+    if (wasLastType(Element::Type::Numeric) && formula.back()->str_.endsWith('.'))
+    {
+        formula.back()->str_.push_back('0');
     }
 
     if (!wasLastType(Element::Type::Operator))
@@ -197,6 +235,8 @@ void AppBasicCalculator::onErasePressed()
 
     formula.back()->str_.removeLast();
 
+    formula.back()->num_ = (formula.back()->str_).toFloat() * (formula.back()->isNegative_? -1 : 1);
+
     if (formula.back()->str_.isEmpty())
     {
         formula.back().release();
@@ -215,6 +255,11 @@ void AppBasicCalculator::onEraseAllPressed()
 
 void AppBasicCalculator::onPNStatusPressed()
 {
+    if (resetRequired && formula.size() == 1)
+    {
+        initialize(true);
+    }
+
     if (formula.empty() || formula.back()->type_ == Element::Type::Operator)
     {
         formula.push_back(std::make_unique<Element>());
@@ -308,6 +353,8 @@ void AppBasicCalculator::onReturnsPressed()
 
         return;
     }
+
+    resetRequired = true;
 
     print();
 }

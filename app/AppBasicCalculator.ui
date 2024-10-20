@@ -441,7 +441,7 @@
        </widget>
       </item>
       <item row="4" column="2">
-       <widget class="QPushButton" name="numDot">
+       <widget class="QPushButton" name="numDecimalPoint">
         <property name="minimumSize">
          <size>
           <width>75</width>
@@ -499,7 +499,7 @@
   <tabstop>num8</tabstop>
   <tabstop>num9</tabstop>
   <tabstop>numPrinciple</tabstop>
-  <tabstop>numDot</tabstop>
+  <tabstop>numDecimalPoint</tabstop>
   <tabstop>opAddition</tabstop>
   <tabstop>opSubstraction</tabstop>
   <tabstop>opMultipulation</tabstop>
