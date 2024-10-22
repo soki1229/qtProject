@@ -29,7 +29,7 @@ Element::Element(char c) : Element()
     }
 }
 
-Element::Element(float f) : type_(Type::Numeric), num_(f)
+Element::Element(double f) : type_(Type::Numeric), num_(f)
 {
     isNegative_ = (f < 0);
     str_ = QString::number(f * (isNegative_? -1 : 1));
@@ -71,6 +71,7 @@ void AppBasicCalculator::initSignalSlots()
     connect(ui->exDelete, &QPushButton::clicked, this, &AppBasicCalculator::onErasePressed);
     connect(ui->exAllClear, &QPushButton::clicked, this, &AppBasicCalculator::onEraseAllPressed);
     connect(ui->exBracket, &QPushButton::clicked, this, &AppBasicCalculator::onBracketPressed);
+    connect(ui->exPercentage, &QPushButton::clicked, this, &AppBasicCalculator::onPercentagePressed);
 
     connect(ui->opAddition, &QPushButton::clicked, this, &AppBasicCalculator::onAdditionPressed);
     connect(ui->opSubstraction, &QPushButton::clicked, this, &AppBasicCalculator::onSubstractionPressed);
@@ -163,7 +164,7 @@ void AppBasicCalculator::onNumericInput(QChar numChar)
 
     formula.back()->str_.append(numChar);
 
-    formula.back()->num_ = (formula.back()->str_).toFloat() * (formula.back()->isNegative_? -1 : 1);
+    formula.back()->num_ = (formula.back()->str_).toDouble() * (formula.back()->isNegative_? -1 : 1);
 
     print();
 }
@@ -194,7 +195,7 @@ void AppBasicCalculator::onDecimalPointPressed()
 
     formula.back()->str_.append(".");
 
-    formula.back()->num_ = (formula.back()->str_).toFloat() * (formula.back()->isNegative_? -1 : 1);
+    formula.back()->num_ = (formula.back()->str_).toDouble() * (formula.back()->isNegative_? -1 : 1);
 
     print();
 }
@@ -235,7 +236,7 @@ void AppBasicCalculator::onErasePressed()
 
     formula.back()->str_.removeLast();
 
-    formula.back()->num_ = (formula.back()->str_).toFloat() * (formula.back()->isNegative_? -1 : 1);
+    formula.back()->num_ = (formula.back()->str_).toDouble() * (formula.back()->isNegative_? -1 : 1);
 
     if (formula.back()->str_.isEmpty())
     {
@@ -276,7 +277,7 @@ void AppBasicCalculator::onPNStatusPressed()
 
     if ((*target)->type_ == Element::Type::Numeric)
     {
-        (*target)->num_ = ((*target)->str_).toFloat() * ((*target)->isNegative_? -1 : 1);
+        (*target)->num_ = ((*target)->str_).toDouble() * ((*target)->isNegative_? -1 : 1);
     }
 
     print();
@@ -319,6 +320,24 @@ void AppBasicCalculator::onBracketPressed()
     print();
 }
 
+void AppBasicCalculator::onPercentagePressed()
+{
+    if (!wasLastType(Element::Type::Numeric))
+    {
+        return;
+    }
+
+    if (formula.back()->str_.endsWith('%'))
+    {
+        return;
+    }
+
+    formula.back()->str_.append('%');
+    formula.back()->num_ /= 100;
+
+    print();
+}
+
 void AppBasicCalculator::setArchive()
 {
     history.clear();
@@ -346,7 +365,7 @@ void AppBasicCalculator::onReturnsPressed()
 
     setArchive();
 
-    if (!calcualteFromula(formula.begin(), formula.end()))
+    if (!calculateFromula(formula.begin(), formula.end()))
     {
         ui->display->setText("ERROR");
         initialize();
@@ -359,7 +378,7 @@ void AppBasicCalculator::onReturnsPressed()
     print();
 }
 
-bool AppBasicCalculator::calcualteFromula(FormulaElements::iterator sPos, FormulaElements::iterator ePos)
+bool AppBasicCalculator::calculateFromula(FormulaElements::iterator sPos, FormulaElements::iterator ePos)
 {
     // 1. Bracket
     auto it = std::find_if(sPos, ePos, [](auto& p){return p->type_ == Element::Type::Bracket;});
@@ -378,10 +397,10 @@ bool AppBasicCalculator::calcualteFromula(FormulaElements::iterator sPos, Formul
             it2 = formula.erase(it2);
             it = formula.erase(it);
 
-            return calcualteFromula(formula.begin(), formula.end());
+            return calculateFromula(formula.begin(), formula.end());
         }
 
-        return calcualteFromula(it+1, it2);
+        return calculateFromula(it+1, it2);
     }
 
     it = std::find_if(sPos, ePos, [](auto& p){return p->type_ == Element::Type::Operator && (p->str_ == '*' || p->str_ == '/');});
@@ -406,7 +425,7 @@ bool AppBasicCalculator::calcualteFromula(FormulaElements::iterator sPos, Formul
 
         it+1 = formula.erase(it+1, it+4);
 
-        return calcualteFromula(formula.begin(), formula.end());
+        return calculateFromula(formula.begin(), formula.end());
     }
 
     it = std::find_if(sPos, ePos, [](auto& p){return p->type_ == Element::Type::Operator;});
@@ -428,7 +447,7 @@ bool AppBasicCalculator::calcualteFromula(FormulaElements::iterator sPos, Formul
 
         it+1 = formula.erase(it+1, it+4);
 
-        return calcualteFromula(formula.begin(), formula.end());
+        return calculateFromula(formula.begin(), formula.end());
     }
 
     return (formula.size() == 1);

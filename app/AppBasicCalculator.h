@@ -22,7 +22,7 @@ public:
 
     Element();
     Element(Type type);
-    Element(float f);
+    Element(double f);
     Element(char c);
     ~Element(){};
 
@@ -33,7 +33,7 @@ public:
 
     Type    type_;
     QString str_;
-    float   num_;
+    double   num_;
     bool    isNegative_;
 };
 
@@ -56,7 +56,7 @@ public:
 
     bool wasLastType(Element::Type type);
     bool isOperatorAvailable();
-    bool calcualteFromula(FormulaElements::iterator begin, FormulaElements::iterator end);
+    bool calculateFromula(FormulaElements::iterator begin, FormulaElements::iterator end);
 
 signals:
 
@@ -71,12 +71,13 @@ private slots:
     void onN7Pressed()              {onNumericInput('7');}
     void onN8Pressed()              {onNumericInput('8');}
     void onN9Pressed()              {onNumericInput('9');}
-    void onDecimalPointPressed();
+    void onPercentagePressed();
 
     void onErasePressed();
     void onEraseAllPressed();
     void onPNStatusPressed();
     void onBracketPressed();
+    void onDecimalPointPressed();
 
     void onAdditionPressed()        {onOperatorPressed('+');}
     void onSubstractionPressed()    {onOperatorPressed('-');}
