@@ -2,13 +2,25 @@
 #include "ui_AppBasicCalculator.h"
 
 Element::Element()
-    : type_(Type::Numeric), str_(QString("0")), num_(0), isNegative_(false)
+    : type_(Type::Numeric), str_(QString("0")), isNegative_(false), isPercentage_(false)
 {
 }
 
 Element::Element(Type type) : Element()
 {
     type_ = type;
+}
+
+Element::Element(double f)
+{
+    if (f < 0)
+    {
+        isNegative_ = true;
+        f *= -1;
+    }
+
+    type_ = Type::Numeric;
+    str_  = QString::number(f);
 }
 
 Element::Element(char c) : Element()
@@ -21,7 +33,7 @@ Element::Element(char c) : Element()
     case '/':
     {
         type_ = Type::Operator;
-        str_  = " " + QString(c) + " ";
+        str_  = (' ' + QString(c) + ' ');
         break;
     }
     default:
@@ -29,10 +41,17 @@ Element::Element(char c) : Element()
     }
 }
 
-Element::Element(double f) : type_(Type::Numeric), num_(f)
+double Element::getOperand()
 {
-    isNegative_ = (f < 0);
-    str_ = QString::number(f * (isNegative_? -1 : 1));
+    double res = str_.toDouble();
+
+    if (isNegative_)
+        res *= -1;
+
+    if (isPercentage_)
+        res /= 100;
+
+    return res;
 }
 
 AppBasicCalculator::AppBasicCalculator(QWidget *parent)
@@ -66,7 +85,7 @@ void AppBasicCalculator::initSignalSlots()
     connect(ui->num8, &QPushButton::clicked, this, &AppBasicCalculator::onN8Pressed);
     connect(ui->num9, &QPushButton::clicked, this, &AppBasicCalculator::onN9Pressed);
     connect(ui->numDecimalPoint, &QPushButton::clicked, this, &AppBasicCalculator::onDecimalPointPressed);
-    connect(ui->numPrinciple, &QPushButton::clicked, this, &AppBasicCalculator::onPNStatusPressed);
+    connect(ui->numPrinciple, &QPushButton::clicked, this, &AppBasicCalculator::onSwitchingNPrinciple);
 
     connect(ui->exDelete, &QPushButton::clicked, this, &AppBasicCalculator::onErasePressed);
     connect(ui->exAllClear, &QPushButton::clicked, this, &AppBasicCalculator::onEraseAllPressed);
@@ -103,18 +122,17 @@ void AppBasicCalculator::print()
     QString output;
 
     if (!history.isEmpty())
-    {
         output.append(history + '\n');
-    }
 
     for (auto &iter : formula)
     {
         if (iter->isNegative_)
-        {
             output.append('-');
-        }
 
-        output.append(iter->type_ == Element::Type::Operator? ' ' + iter->str_ + ' ' : iter->str_);
+        output.append(iter->type_ == Element::Type::Operator? (' ' + iter->str_ + ' ') : iter->str_);
+
+        if (iter->isPercentage_)
+            output.append('%');
     }
 
     ui->display->setText(output);
@@ -164,8 +182,6 @@ void AppBasicCalculator::onNumericInput(QChar numChar)
 
     formula.back()->str_.append(numChar);
 
-    formula.back()->num_ = (formula.back()->str_).toDouble() * (formula.back()->isNegative_? -1 : 1);
-
     print();
 }
 
@@ -194,8 +210,6 @@ void AppBasicCalculator::onDecimalPointPressed()
     }
 
     formula.back()->str_.append(".");
-
-    formula.back()->num_ = (formula.back()->str_).toDouble() * (formula.back()->isNegative_? -1 : 1);
 
     print();
 }
@@ -236,8 +250,6 @@ void AppBasicCalculator::onErasePressed()
 
     formula.back()->str_.removeLast();
 
-    formula.back()->num_ = (formula.back()->str_).toDouble() * (formula.back()->isNegative_? -1 : 1);
-
     if (formula.back()->str_.isEmpty())
     {
         formula.back().release();
@@ -254,7 +266,7 @@ void AppBasicCalculator::onEraseAllPressed()
     print();
 }
 
-void AppBasicCalculator::onPNStatusPressed()
+void AppBasicCalculator::onSwitchingNPrinciple()
 {
     if (resetRequired && formula.size() == 1)
     {
@@ -274,11 +286,6 @@ void AppBasicCalculator::onPNStatusPressed()
     }
 
     (*target)->isNegative_ = !(*target)->isNegative_;
-
-    if ((*target)->type_ == Element::Type::Numeric)
-    {
-        (*target)->num_ = ((*target)->str_).toDouble() * ((*target)->isNegative_? -1 : 1);
-    }
 
     print();
 }
@@ -322,18 +329,12 @@ void AppBasicCalculator::onBracketPressed()
 
 void AppBasicCalculator::onPercentagePressed()
 {
-    if (!wasLastType(Element::Type::Numeric))
+    if (!wasLastType(Element::Type::Numeric) || formula.back()->isPercentage_)
     {
         return;
     }
 
-    if (formula.back()->str_.endsWith('%'))
-    {
-        return;
-    }
-
-    formula.back()->str_.append('%');
-    formula.back()->num_ /= 100;
+    formula.back()->isPercentage_ = true;
 
     print();
 }
@@ -351,6 +352,10 @@ void AppBasicCalculator::setArchive()
 
         history.append(iter->type_ == Element::Type::Operator? ' ' + iter->str_ + ' ' : iter->str_);
 
+        if (iter->isPercentage_)
+        {
+            history.append('%');
+        }
     }
 
     history.append(" = ");
@@ -373,6 +378,12 @@ void AppBasicCalculator::onReturnsPressed()
         return;
     }
 
+    if (formula.back()->isPercentage_)
+    {
+        formula.back()->str_ = QString::number(formula.back()->str_.toDouble()/100);
+        formula.back()->isPercentage_ = false;
+    }
+
     resetRequired = true;
 
     print();
@@ -390,8 +401,7 @@ bool AppBasicCalculator::calculateFromula(FormulaElements::iterator sPos, Formul
         {
             if (it->get()->isNegative_)
             {
-                (it+1)->get()->isNegative_ = true;
-                (it+1)->get()->num_ *= -1;
+                (it+1)->get()->isNegative_ = !(it+1)->get()->isNegative_;
             }
 
             it2 = formula.erase(it2);
@@ -406,8 +416,8 @@ bool AppBasicCalculator::calculateFromula(FormulaElements::iterator sPos, Formul
     it = std::find_if(sPos, ePos, [](auto& p){return p->type_ == Element::Type::Operator && (p->str_ == '*' || p->str_ == '/');});
     if (it != ePos)
     {
-        auto opA = (it-1)->get()->num_;
-        auto opB = (it+1)->get()->num_;
+        auto opA = (it-1)->get()->getOperand();
+        auto opB = (it+1)->get()->getOperand();
 
         if (it->get()->str_ == '*')
         {
@@ -431,8 +441,8 @@ bool AppBasicCalculator::calculateFromula(FormulaElements::iterator sPos, Formul
     it = std::find_if(sPos, ePos, [](auto& p){return p->type_ == Element::Type::Operator;});
     if (it != ePos)
     {
-        auto opA = (it-1)->get()->num_;
-        auto opB = (it+1)->get()->num_;
+        auto opA = (it-1)->get()->getOperand();
+        auto opB = (it+1)->get()->getOperand();
 
         if (it->get()->str_ == '+')
         {

@@ -26,15 +26,18 @@ public:
     Element(char c);
     ~Element(){};
 
+    Element& operator=(const Element& rhs);
+
     bool isRealNumber()
     {
         return type_ == Element::Type::Numeric && str_.contains('.');
     }
 
+    double getOperand();
     Type    type_;
     QString str_;
-    double   num_;
     bool    isNegative_;
+    bool    isPercentage_;
 };
 
 using FormulaElements = std::vector<std::unique_ptr<Element>>;
@@ -75,7 +78,7 @@ private slots:
 
     void onErasePressed();
     void onEraseAllPressed();
-    void onPNStatusPressed();
+    void onSwitchingNPrinciple();
     void onBracketPressed();
     void onDecimalPointPressed();
 
@@ -91,11 +94,9 @@ private:
 
     FormulaElements formula;
     QString         history;
-
-    bool    isBracketOpened = false;
-    int     openedIndex     = 0;
-
-    bool    resetRequired   = false;
+    bool            resetRequired   = false;
+    bool            isBracketOpened = false;
+    int             openedIndex     = 0;
 
 };
 
