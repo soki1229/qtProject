@@ -11,15 +11,18 @@ CONFIG += sdk_no_version_check
 
 SOURCES += \
     app/AppBasicCalculator.cpp \
-    main.cpp
+    main.cpp \
+    mainwindow.cpp
     # AppCalculator/AppCalculator.cpp \
 
 HEADERS += \
-    app/AppBasicCalculator.h
+    app/AppBasicCalculator.h \
+    mainwindow.h
     # AppCalculator/AppCalculator.h \
 
 FORMS += \
-    app/AppBasicCalculator.ui
+    app/AppBasicCalculator.ui \
+    mainwindow.ui
     # AppCalculator/AppCalculator.ui \
 
 # Default rules for deployment.
